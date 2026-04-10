@@ -1,81 +1,7 @@
-# #%%
-
+#%%
 # # ASSUMES CONSTANT DEPTH DOWN WHOLE RIVER AFTER CONFLUENT OR BIFURCATION POINT 
 
-# # Processing rivers 
-# import geopandas as gpd
-# import pandas as pd
-# import numpy as np
-# from shapely.geometry import Point
-
-# # 1. Load data
-# delta_domain = gpd.read_file(r"C:\PhD\SFINCS\SFINCS_cloned\input\4_delta_polygons.geojson")
-# delta_domain = delta_domain[delta_domain['BasinID2'] == 4267691].to_crs(epsg=3857)
-
-# # delta_domain = gpd.read_file(r"C:\Users\lasch\Downloads\NL_polygon.gpkg").to_crs(epsg=3857)
-
-# rivers_sword = gpd.read_file(r"C:\PhD\SFINCS\SFINCS_cloned\input\SWORD_global_unpublished.gpkg", mask=delta_domain).to_crs(epsg=3857)
-# rivers_lin = gpd.read_file(r"C:\PhD\SFINCS\SFINCS_cloned\input\rivers_lin.gpkg", mask=delta_domain).to_crs(epsg=3857)
-# rivers_sword_old = gpd.read_file(r"C:\PhD\SFINCS\SFINCS_cloned\input\Global_rivers.gpkg", mask=delta_domain).to_crs(epsg=3857)
-
-# # 2. Map boundary inflows
-# boundary_line = delta_domain.geometry.boundary.iloc[0]
-# inflow_reaches = rivers_sword[rivers_sword.intersects(boundary_line)].copy()
-# joined_inflows = gpd.sjoin_nearest(inflow_reaches, rivers_lin, max_distance=100, how='inner')
-# rivers_sword['inflow_Q2'] = rivers_sword['reach_id'].map(dict(zip(joined_inflows['reach_id'], joined_inflows['Q2']))).fillna(0)
-
-# # 3. Create Connection Map
-# tail_circles = rivers_sword.copy()
-# tail_circles['geometry'] = tail_circles.geometry.apply(lambda x: Point(x.coords[-1])).buffer(150)
-# head_points = rivers_sword.copy()
-# head_points['geometry'] = head_points.geometry.apply(lambda x: Point(x.coords[0]))
-
-# # Spatial join to find connections
-# connections = gpd.sjoin(head_points[['reach_id', 'geometry']], tail_circles[['reach_id', 'geometry']], how='inner', predicate='within')
-# # Drop geometry and convert to simple DataFrame for the connection map
-# conn_map = pd.DataFrame(connections[['reach_id_left', 'reach_id_right']])
-# conn_map = conn_map[conn_map['reach_id_left'] != conn_map['reach_id_right']].astype(int)
-# conn_map = conn_map.rename(columns={'reach_id_left': 'down_id', 'reach_id_right': 'up_id'})
-
-# # 4. Flow Accumulation (Waterfall)
-# q_dict = rivers_sword.set_index('reach_id')['inflow_Q2'].to_dict()
-# is_boundary = rivers_sword.set_index('reach_id')['inflow_Q2'] > 0
-# widths = rivers_sword.set_index('reach_id')['width'].to_dict()
-
-# for _ in range(100):
-#     next_q = {rid: val for rid, val in q_dict.items() if is_boundary.get(rid, False)}
-#     for up_id, group in conn_map.groupby('up_id'):
-#         parent_flow = q_dict.get(up_id, 0)
-#         if parent_flow <= 0: continue
-        
-#         down_ids = group['down_id'].unique()
-#         total_w = sum(widths.get(d_id, 0) for d_id in down_ids)
-#         for d_id in down_ids:
-#             if not is_boundary.get(d_id, False):
-#                 share = widths.get(d_id, 0) / total_w if total_w > 0 else (1.0 / len(down_ids))
-#                 next_q[d_id] = next_q.get(d_id, 0) + (parent_flow * share)
-#     q_dict.update(next_q)
-
-# # rename width variable to match sfincs requirements
-# rivers_sword = rivers_sword.rename(columns={'width': 'rivwth'})
-
-# # Calculate depth of river segments 
-# rivers_sword['final_Q2'] = rivers_sword['reach_id'].map(q_dict).fillna(0)
-# rivers_clipped = rivers_sword[rivers_sword['final_Q2'] > 1e-4].copy()
-
-# a = 0.27
-# b = 0.30
-# rivers_clipped['rivdph'] = (a * (rivers_clipped['final_Q2']**b)).clip(lower=0.1)
-
-# print(rivers_clipped[['inflow_Q2', 'reach_id', 'final_Q2', 'rivwth', 'rivdph']])
-
-# # export as gpkg
-# rivers_clipped.to_file(r"C:\PhD\SFINCS\SFINCS_cloned\input\global_SWORD_with_dph.gpkg", driver='GPKG')
-
-#%%
-
-# Processing rivers - FIXED BIFURCATION WITH WIDTH-BASED Q PARTITIONING
-
+# Processing rivers 
 import geopandas as gpd
 import pandas as pd
 import numpy as np
@@ -83,7 +9,79 @@ from shapely.geometry import Point
 
 # 1. Load data
 delta_domain = gpd.read_file(r"C:\PhD\SFINCS\SFINCS_cloned\input\4_delta_polygons.geojson")
-delta_domain = delta_domain[delta_domain['BasinID2'] == 4267691].to_crs(epsg=3857)
+delta_domain = delta_domain[delta_domain['BasinID2'] == 620947].to_crs(epsg=3857)
+
+# delta_domain = gpd.read_file(r"C:\Users\lasch\Downloads\NL_polygon.gpkg").to_crs(epsg=3857)
+
+rivers_sword = gpd.read_file(r"C:\PhD\SFINCS\SFINCS_cloned\input\SWORD_global_unpublished.gpkg", mask=delta_domain).to_crs(epsg=3857)
+rivers_lin = gpd.read_file(r"C:\PhD\SFINCS\SFINCS_cloned\input\rivers_lin.gpkg", mask=delta_domain).to_crs(epsg=3857)
+rivers_sword_old = gpd.read_file(r"C:\PhD\SFINCS\SFINCS_cloned\input\Global_rivers.gpkg", mask=delta_domain).to_crs(epsg=3857)
+
+# 2. Map boundary inflows
+boundary_line = delta_domain.geometry.boundary.iloc[0]
+inflow_reaches = rivers_sword[rivers_sword.intersects(boundary_line)].copy()
+joined_inflows = gpd.sjoin_nearest(inflow_reaches, rivers_lin, max_distance=100, how='inner')
+rivers_sword['inflow_Q2'] = rivers_sword['reach_id'].map(dict(zip(joined_inflows['reach_id'], joined_inflows['Q2']))).fillna(0)
+
+# 3. Create Connection Map
+tail_circles = rivers_sword.copy()
+tail_circles['geometry'] = tail_circles.geometry.apply(lambda x: Point(x.coords[-1])).buffer(150)
+head_points = rivers_sword.copy()
+head_points['geometry'] = head_points.geometry.apply(lambda x: Point(x.coords[0]))
+
+# Spatial join to find connections
+connections = gpd.sjoin(head_points[['reach_id', 'geometry']], tail_circles[['reach_id', 'geometry']], how='inner', predicate='within')
+# Drop geometry and convert to simple DataFrame for the connection map
+conn_map = pd.DataFrame(connections[['reach_id_left', 'reach_id_right']])
+conn_map = conn_map[conn_map['reach_id_left'] != conn_map['reach_id_right']].astype(int)
+conn_map = conn_map.rename(columns={'reach_id_left': 'down_id', 'reach_id_right': 'up_id'})
+
+# 4. Flow Accumulation (Waterfall)
+q_dict = rivers_sword.set_index('reach_id')['inflow_Q2'].to_dict()
+is_boundary = rivers_sword.set_index('reach_id')['inflow_Q2'] > 0
+widths = rivers_sword.set_index('reach_id')['width'].to_dict()
+
+for _ in range(100):
+    next_q = {rid: val for rid, val in q_dict.items() if is_boundary.get(rid, False)}
+    for up_id, group in conn_map.groupby('up_id'):
+        parent_flow = q_dict.get(up_id, 0)
+        if parent_flow <= 0: continue
+        
+        down_ids = group['down_id'].unique()
+        total_w = sum(widths.get(d_id, 0) for d_id in down_ids)
+        for d_id in down_ids:
+            if not is_boundary.get(d_id, False):
+                share = widths.get(d_id, 0) / total_w if total_w > 0 else (1.0 / len(down_ids))
+                next_q[d_id] = next_q.get(d_id, 0) + (parent_flow * share)
+    q_dict.update(next_q)
+
+# rename width variable to match sfincs requirements
+rivers_sword = rivers_sword.rename(columns={'width': 'rivwth'})
+
+# Calculate depth of river segments 
+rivers_sword['final_Q2'] = rivers_sword['reach_id'].map(q_dict).fillna(0)
+rivers_clipped = rivers_sword[rivers_sword['final_Q2'] > 1e-4].copy()
+
+a = 0.27
+b = 0.30
+rivers_clipped['rivdph'] = (a * (rivers_clipped['final_Q2']**b)).clip(lower=0.1)
+
+print(rivers_clipped[['inflow_Q2', 'reach_id', 'final_Q2', 'rivwth', 'rivdph']])
+
+# # export as gpkg
+# rivers_clipped.to_file(r"C:\PhD\SFINCS\SFINCS_cloned\input\global_SWORD_with_dph.gpkg", driver='GPKG')
+
+#%%
+
+# Processing rivers - FIXED BIFURCATION WITH WIDTH-BASED Q PARTITIONING
+import geopandas as gpd
+import pandas as pd
+import numpy as np
+from shapely.geometry import Point
+
+# 1. Load data
+delta_domain = gpd.read_file(r"C:\PhD\SFINCS\SFINCS_cloned\input\4_delta_polygons.geojson")
+delta_domain = delta_domain[delta_domain['BasinID2'] == 620947].to_crs(epsg=3857)
 # delta_domain = gpd.read_file(r"C:\Users\lasch\Downloads\NL_polygon.gpkg").to_crs(epsg=3857)
 rivers_sword = gpd.read_file(r"C:\PhD\SFINCS\SFINCS_cloned\input\SWORD_global_unpublished.gpkg", mask=delta_domain).to_crs(epsg=3857)
 rivers_lin = gpd.read_file(r"C:\PhD\SFINCS\SFINCS_cloned\input\rivers_lin.gpkg", mask=delta_domain).to_crs(epsg=3857)
@@ -153,7 +151,7 @@ rivers_clipped['rivwth'] = pd.to_numeric(rivers_clipped['width'], errors='coerce
 a = 0.27
 b = 0.3
 c = 7.2
-f = 0.5
+f = 0.6
 alpha = (a * c)
 beta = (b + f)
 
@@ -165,35 +163,37 @@ rivers_clipped['crosssection_area'] = alpha * (q_nonneg ** beta)
 rivers_clipped['rivdph'] = rivers_clipped['crosssection_area'] / rivers_clipped['rivwth']
 rivers_clipped['rivdph'] = rivers_clipped['rivdph'].clip(lower=0.1, upper=25.0)
 
-# 7. DEBUG & VERIFICATION
-print("Bifurcation & Width-Depth check (top 20 reaches):")
-verify = rivers_clipped.nlargest(20, 'final_Q2')[['reach_id', 'width', 'rivwth', 'final_Q2', 'rivdph', 'crosssection_area']]
-verify = verify.sort_values(['width', 'final_Q2'])
-print(verify)
-print(f"\nWidth-Q correlation: {rivers_clipped['rivwth'].corr(rivers_clipped['final_Q2']):.3f}")
-print(f"Width-Depth correlation: {rivers_clipped['rivwth'].corr(rivers_clipped['rivdph']):.3f} (negative = working!)")
+print(rivers_clipped[['reach_id', 'final_Q2', 'rivwth', 'rivdph']])    
 
-print("\nSFINCS-ready: rivers_clipped with rivwth, rivdph, final_Q2")
-print(f"Total reaches: {len(rivers_clipped)}")
+# # 7. DEBUG & VERIFICATION
+# print("Bifurcation & Width-Depth check (top 20 reaches):")
+# verify = rivers_clipped.nlargest(20, 'final_Q2')[['reach_id', 'width', 'rivwth', 'final_Q2', 'rivdph', 'crosssection_area']]
+# verify = verify.sort_values(['width', 'final_Q2'])
+# print(verify)
+# print(f"\nWidth-Q correlation: {rivers_clipped['rivwth'].corr(rivers_clipped['final_Q2']):.3f}")
+# print(f"Width-Depth correlation: {rivers_clipped['rivwth'].corr(rivers_clipped['rivdph']):.3f} (negative = working!)")
+
+# print("\nSFINCS-ready: rivers_clipped with rivwth, rivdph, final_Q2")
+# print(f"Total reaches: {len(rivers_clipped)}")
 
 # export as gkpg
 # rivers_clipped.to_file(r"C:\PhD\SFINCS\SFINCS_cloned\input\global_SWORD_with_dph_wdth_test.gpkg", driver='GPKG')
 
 # EXTRA TEXT
-# # 3. Calculate Predicted Width (Theoretical) vs. Observed Width (SWORD)
-# q_nonneg = rivers_clipped['final_Q2'].clip(lower=0.0)
-# rivers_clipped['predicted_w'] = c * (q_nonneg ** f)
+# 3. Calculate Predicted Width (Theoretical) vs. Observed Width (SWORD)
+q_nonneg = rivers_clipped['final_Q2'].clip(lower=0.0)
+rivers_clipped['predicted_w'] = c * (q_nonneg ** f)
 
-# # 4. Calculate Area and final Depth
-# rivers_clipped['required_area'] = alpha * (q_nonneg ** beta)
-# rivers_clipped['rivdph'] = rivers_clipped['required_area'] / rivers_clipped['rivwth']
+# 4. Calculate Area and final Depth
+rivers_clipped['required_area'] = alpha * (q_nonneg ** beta)
+rivers_clipped['rivdph'] = rivers_clipped['required_area'] / rivers_clipped['rivwth']
 
-# # 5. NEW: Calculate the "Width Ratio" 
-# # (How much wider/narrower is the real river than the theory?)
-# rivers_clipped['w_ratio'] = rivers_clipped['rivwth'] / rivers_clipped['predicted_w']
+# 5. NEW: Calculate the "Width Ratio" 
+# (How much wider/narrower is the real river than the theory?)
+rivers_clipped['w_ratio'] = rivers_clipped['rivwth'] / rivers_clipped['predicted_w']
 
-# verify = rivers_clipped.nlargest(20, 'final_Q2')[['reach_id', 'final_Q2', 'rivwth', 'predicted_w', 'w_ratio', 'rivdph']]
-# print(verify)
+verify = rivers_clipped.nlargest(20, 'final_Q2')[['reach_id', 'final_Q2', 'rivwth', 'predicted_w', 'w_ratio', 'rivdph']]
+print(verify)
 
 
 # %%

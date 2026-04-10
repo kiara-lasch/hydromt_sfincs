@@ -12,14 +12,13 @@ import hydromt
 from hydromt._utils import log
 from hydromt_sfincs import SfincsModel
 from hydromt_sfincs.components.forcing import rivers
-from sfincs_utils import run_sfincs
 from hydromt import DataCatalog
 from shapely.geometry import Point
 import pandas as pd
 import numpy as np
 from pyproj import Transformer
 import logging
-# from river_processing import river_depth_estimation
+
 
 def build_sfincs_model(delta_basin_id: int, root_folder: Path, data_libs: list = ['data_catalog_v1.yml']):
     
@@ -40,7 +39,7 @@ def build_sfincs_model(delta_basin_id: int, root_folder: Path, data_libs: list =
     catalog = hydromt.DataCatalog(data_libs = data_libs) 
 
     # 1b: Configure model - define model domain -----------------------------------------------------------------------
-    deltas = catalog.get_geodataframe('4_small_deltas')
+    deltas = catalog.get_geodataframe('4_delta_polygons')
     delta_domain = deltas[deltas['BasinID2'] == delta_basin_id]
 
     # 1c: Initialise model -----------------------------------------------------------------------------------------------
@@ -160,7 +159,7 @@ def build_sfincs_model(delta_basin_id: int, root_folder: Path, data_libs: list =
     # Keep the better width data from SWORD (variable = 'width') if available, otherwise keep calculated value from power-law relationship 
     rivers_clipped.loc[rivers_clipped["width"].notna(), "rivwth"] = (rivers_clipped["width"])
     
-    a = 0.27
+    a = 0.15
     b = 0.30  
     rivers_clipped["rivdph"] = a * (rivers_clipped["Q2"].astype(float) ** b)
 
@@ -201,7 +200,7 @@ def build_sfincs_model(delta_basin_id: int, root_folder: Path, data_libs: list =
     )
 
     # Waterlevel --------
-    sf.water_level.create(geodataset = "gtsm_codec_reanalysis", # Sanne's new data 
+    sf.water_level.create(geodataset = "gtsm_codec_reanalysis_waterlevel_hourly", # Sanne's new data 
                           buffer = 25e3) 
 
     # Rivers -------------

@@ -1,7 +1,6 @@
 #%%
 from os.path import join
 import matplotlib.pyplot as plt
-
 from hydromt_sfincs import SfincsModel, utils
 from pathlib import Path
 
@@ -36,7 +35,6 @@ sfincs_root_dep = "C:/PhD/SFINCS/SFINCS_cloned/output/sfincs_620947"
 depfile = join(sfincs_root_dep, "subgrid", "dep_subgrid.tif")
 
 da_dep = mod.data_catalog.get_rasterdataset(depfile)
-
 
 # now assuming we have a subgrid model, we don't have hmax available, so we are using zsmax (maximum water levels)
 # compute the maximum over all time steps

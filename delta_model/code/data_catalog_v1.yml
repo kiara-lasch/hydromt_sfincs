@@ -11,32 +11,21 @@ meta:
 #     crs: 4326
 #   uri: 40_delta_polygons.geojson
 
-# 4_delta_polygons: # edited domains, but too big to run on local computer 
-#   data_type: GeoDataFrame
-#   driver:
-#     name: pyogrio
-#   metadata:
-#     crs: 4326
-#   uri: 4_delta_polygons.geojson
-
-4_small_deltas: # edited domains 
+4_delta_polygons: # edited domains, but too big to run on local computer 
   data_type: GeoDataFrame
   driver:
     name: pyogrio
   metadata:
     crs: 4326
-  uri: 4_small_deltas.geojson
+  uri: 4_delta_polygons.geojson
 
-# 4_small_deltas_rivers: # clipped rivers for the 4 deltas 
-#   data_adapter:
-#     rename:
-#       width: rivwth
+# 4_small_deltas: # edited domains 
 #   data_type: GeoDataFrame
 #   driver:
 #     name: pyogrio
 #   metadata:
 #     crs: 4326
-#   uri: rivers_clipped_formatted.gpkg
+#   uri: 4_small_deltas.geojson
 
 global_SWORD_old: # works 
   data_type: GeoDataFrame
@@ -162,29 +151,29 @@ osm_water: # dont have enough space for this folder on my local computer
     crs: 4326
   uri: P:/wflow_global/hydromt/geography/osm/osm_coastlines-db.gpkg 
 
-gtsm_codec_reanalysis: # from sanne - works  
-  data_adapter:
-    rename:
-      station_x_coordinate: lon
-      station_y_coordinate: lat
-      stations: index
-  data_type: GeoDataset
-  driver:
-    name: geodataset_xarray
-    options:
-      chunks: {stations: 100, time: 1500}
-      combine: by_coords
-      decode_times: true
-      parallel: true
-  metadata:
-    category: ocean
-    crs: 4326
-    paper_doi: 10.3389/fmars.2020.00263
-    paper_ref: Muis et al. (2020)
-    source_license: https://cds.climate.copernicus.eu/api/v2/terms/static/licence-to-use-copernicus-products.pdf
-    source_url: https://doi.org/10.24381/cds.8c59054f
-    source_version: v1
-  uri: P:/archivedprojects_tmp/11210221-gtsm-reanalysis/GTSM-ERA5-E_dataset/waterlevel/reanalysis_waterlevel_hourly_{year}_{month:02d}_v3.nc
+# gtsm_codec_reanalysis: # from sanne - works  
+#   data_adapter:
+#     rename:
+#       station_x_coordinate: lon
+#       station_y_coordinate: lat
+#       stations: index
+#   data_type: GeoDataset
+#   driver:
+#     name: geodataset_xarray
+#     options:
+#       chunks: {stations: 100, time: 1500}
+#       combine: by_coords
+#       decode_times: true
+#       parallel: true
+#   metadata:
+#     category: ocean
+#     crs: 4326
+#     paper_doi: 10.3389/fmars.2020.00263
+#     paper_ref: Muis et al. (2020)
+#     source_license: https://cds.climate.copernicus.eu/api/v2/terms/static/licence-to-use-copernicus-products.pdf
+#     source_url: https://doi.org/10.24381/cds.8c59054f
+#     source_version: v1
+#   uri: P:/archivedprojects_tmp/11210221-gtsm-reanalysis/GTSM-ERA5-E_dataset/waterlevel/reanalysis_waterlevel_hourly_{year}_{month:02d}_v3.nc
 
 merit_hydro:
   data_type: RasterDataset
@@ -215,54 +204,27 @@ merit_hydro:
       wth: rivwth
 
 
-# gtsm_codec_reanalysis_waterlevel_hourly: # works
-#   data_adapter:
-#     rename:
-#       station_x_coordinate: lon
-#       station_y_coordinate: lat
-#       stations: index
-#   data_type: GeoDataset
-#   driver:
-#     name: geodataset_xarray
-#     options:
-#       chunks: {stations: 100, time: 1500}
-#       combine: by_coords
-#       decode_times: true
-#       parallel: true
-#   metadata:
-#     category: ocean
-#     crs: 4326
-#     paper_doi: 10.3389/fmars.2020.00263
-#     paper_ref: Muis et al. (2020)
-#     source_license: https://cds.climate.copernicus.eu/api/v2/terms/static/licence-to-use-copernicus-products.pdf
-#     source_url: https://doi.org/10.24381/cds.8c59054f
-#     source_version: v1
-#   uri: P:/archivedprojects/11205028-c3s_435/01_data/01_Timeseries/timeseries2/waterlevel/reanalysis_waterlevel_hourly_{year}_{month:02d}_v1.nc 
+gtsm_codec_reanalysis_waterlevel_hourly: # works
+  data_adapter:
+    rename:
+      station_x_coordinate: lon
+      station_y_coordinate: lat
+      stations: index
+  data_type: GeoDataset
+  driver:
+    name: geodataset_xarray
+    options:
+      chunks: {stations: 100, time: 1500}
+      combine: by_coords
+      decode_times: true
+      parallel: true
+  metadata:
+    category: ocean
+    crs: 4326
+    paper_doi: 10.3389/fmars.2020.00263
+    paper_ref: Muis et al. (2020)
+    source_license: https://cds.climate.copernicus.eu/api/v2/terms/static/licence-to-use-copernicus-products.pdf
+    source_url: https://doi.org/10.24381/cds.8c59054f
+    source_version: v1
+  uri: P:/archivedprojects/11205028-c3s_435/01_data/01_Timeseries/timeseries2/waterlevel/reanalysis_waterlevel_hourly_{year}_{month:02d}_v1.nc 
 
-# gcn250:
-#   data_type: RasterDataset
-#   driver:
-#     name: rasterio
-#   metadata:
-#     category: soil
-#     paper_doi: 10.1038/s41597-019-0155-x
-#     paper_ref: Jaafar et al. (2019)
-#     source_license: CC BY 4.0
-#     source_url: https://doi.org/10.6084/m9.figshare.7756202.v1
-#     source_version: v1
-#   uri: P:/wflow_global/hydromt/landuse/gcn250/GCN250_ARCII.tif
-
-# hydrobasins_global:
-#   data_type: GeoDataFrame
-#   driver:
-#     name: pyogrio
-#   metadata:
-#     category: hydrography
-#     crs: 4326
-#     notes: Global HydroBASINS level 12 polygons
-#     paper_doi: 10.5194/hess-17-2029-2013
-#     paper_ref: Lehner et al. (2013)
-#     source_license: CC BY 4.0
-#     source_url: https://www.hydrosheds.org/pages/hydrobasins
-#     source_version: '1.0'
-#   uri: hydrobasins_global.gpkg
