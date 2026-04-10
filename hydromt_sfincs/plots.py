@@ -273,11 +273,17 @@ def plot_basemap(
     # by default colorbar on lower right & legend upper right
     kwargs0 = {"cbar_kwargs": {"shrink": 0.5, "anchor": (0, 0)}}
     kwargs0.update(kwargs)
+
     # make nice cmap
     if "cmap" not in kwargs or "norm" not in kwargs:
         depth_vars = ["dep", "z"]
         if variable in depth_vars and variable in ds:
+            # auto-determine vmin and vmax
             vmin, vmax = ds[variable].raster.mask_nodata().quantile([0.0, 0.98]).values
+            # make sure vmin and vmax are different
+            if vmin == vmax:
+                vmax = vmin + 1
+            # overrule auto vmin and vmax with user input
             vmin, vmax = int(kwargs.pop("vmin", vmin)), int(kwargs.pop("vmax", vmax))
             c_dem = plt.cm.terrain(np.linspace(0.25, 1, vmax))
             if vmin < 0:
@@ -330,21 +336,17 @@ def plot_basemap(
             grid_kwargs0 = {"color": "black", "linewidth": 0.7}
             grid_kwargs0.update(**grid_kwargs)
             if ds.raster.rotation != 0 and "xc" in ds.coords and "yc" in ds.coords:
-                ax.plot(
-                    ds["xc"].values,
-                    ds["yc"].values,
-                    zorder=1,
-                    transform=crs,
-                    **grid_kwargs0,
-                )
+                x, y = ds["xc"].values, ds["yc"].values
             else:
-                ax.plot(
-                    ds["x"].values,
-                    ds["y"].values,
-                    zorder=1,
-                    transform=crs,
-                    **grid_kwargs0,
-                )
+                x, y = np.meshgrid(ds["x"].values, ds["y"].values)
+
+            ax.plot(
+                x,
+                y,
+                zorder=1,
+                transform=crs,
+                **grid_kwargs0,
+            )
         elif isinstance(ds, xu.UgridDataset):
             grid_kwargs0 = {"color": "black", "linewidth": 0.3}
             grid_kwargs0.update(**grid_kwargs)
@@ -368,12 +370,7 @@ def plot_basemap(
             "No 'mask' (sfincs.mask) found in ds required to plot the model bounds "
             "Set plot_bounds=False or add 'mask' to ds"
         )
-    elif plot_bounds and isinstance(ds, xu.UgridDataset):
-        raise NotImplementedError(
-            "Plotting of the boundaries for quadtree grids is not yet implemented. "
-            "Set plot_bounds=False to proceed."
-        )
-    elif plot_bounds and (ds["mask"] >= 1).any():
+    elif plot_bounds and (ds["mask"] > 1).any():
         gdf_msk = get_bounds_vector(ds["mask"])
         gdf_msk2 = gdf_msk[gdf_msk["value"] == 2]
         gdf_msk3 = gdf_msk[gdf_msk["value"] == 3]
